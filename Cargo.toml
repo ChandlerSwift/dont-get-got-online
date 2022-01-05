@@ -1,0 +1,8 @@
+[package]
+name = "dont-get-got-online"
+version = "0.1.0"
+authors = ["Chandler Swift <chandler@chandlerswift.com>"]
+edition = "2021"
+
+[dependencies]
+rocket = "0.5.0-rc.1"
