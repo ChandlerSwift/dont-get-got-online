@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Don't Get Got! Online</title>
+    <link rel="stylesheet" href="/style.css">
+    <script src="/script.js" charset="utf-8" defer></script>
+  </head>
+  <body>
+    <h1>Don't Get Got!</h1>
+    <div class="status">TODO: status</div>
+    <h3>Challenges</h3>
+    <ul id="challenge-list">
+      {% for challenge in challenges %}
+        <li><b>{{ challenge.state }}:</b> {{ challenge.prompt }}</li>
+      {% endfor %}
+    </ul>
+    Players
+    <ul id="player-list">
+      {% for player in game.players %}
+      <li>{{ player.name }} (<span class="current-score">{{ player.score }}</span>/6)
+        {% if player.score > 0 %}
+        <ul>
+          {% for challenge in player.challenges %}
+            {% if challenge.state == "Succeeded" %}
+              <li>{{ challenge.prompt }}</li>
+            {% endif %}
+          {% endfor %}
+        </ul>
+        {% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+  </body>
+</html>
