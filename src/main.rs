@@ -1,13 +1,14 @@
-#[macro_use] extern crate rocket;
+#[macro_use]
+extern crate rocket;
 
-use std::sync::{Mutex,RwLock};
 use rocket::fs::FileServer;
-use rocket_dyn_templates::{Template};
+use rocket::response::Redirect;
 use rocket::serde::{Serialize, Serializer};
+use rocket::State;
+use rocket_dyn_templates::Template;
 use serde::ser::SerializeStruct;
 use std::collections::HashMap;
-use rocket::State;
-use rocket::response::Redirect;
+use std::sync::{Mutex, RwLock};
 // use rocket::http::CookieJar;
 
 #[derive(Debug, Serialize)]
@@ -71,14 +72,16 @@ enum ChallengeState {
 }
 
 impl Default for ChallengeState {
-    fn default() -> Self { ChallengeState::Active }
+    fn default() -> Self {
+        ChallengeState::Active
+    }
 }
 
 type Prompt = String;
 
 #[get("/")]
 fn index() -> Template {
-    let game = Game{
+    let game = Game {
         join_code: String::from("foo"),
         players: Vec::new(),
     };
@@ -132,25 +135,29 @@ fn play() -> Template {
             },
         ],
     };
-    Template::render("play", PlayPageContext{
-        challenges: game.players[0].challenges.clone(),
-        game: game,
-    })
+    Template::render(
+        "play",
+        PlayPageContext {
+            challenges: game.players[0].challenges.clone(),
+            game: game,
+        },
+    )
 }
 
 #[post("/play")]
 fn new(games: &State<GameList>) -> Redirect {
     let mut game_list = games.games.write().unwrap();
     let new_join_code = format!("game{}", game_list.len());
-    game_list.insert(new_join_code.clone(), Mutex::new(Game{
-        join_code: new_join_code,
-        players: vec![
-            Player{
+    game_list.insert(
+        new_join_code.clone(),
+        Mutex::new(Game {
+            join_code: new_join_code,
+            players: vec![Player {
                 name: String::from("Chandler"),
                 challenges: Vec::new(),
-            }
-        ]
-    }));
+            }],
+        }),
+    );
     Redirect::to(uri!(play()))
 }
 
@@ -170,11 +177,12 @@ fn rocket() -> _ {
     // let raw_input = fs::read_to_string("challenges.txt").expect("Something went wrong reading the file");
     // let challenges = raw_input.trim().split("\n").collect::<Vec<&str>>();
 
-    let games = GameList{
+    let games = GameList {
         games: RwLock::new(HashMap::new()),
     };
 
-    rocket::build().mount("/", routes![index, play, new, status])
+    rocket::build()
+        .mount("/", routes![index, play, new, status])
         .attach(Template::fairing())
         .manage(games)
         .mount("/", FileServer::from("static"))
