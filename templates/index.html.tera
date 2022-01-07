@@ -13,5 +13,13 @@
       or<br>
       <input type="text" size="6" name="join-code" id="join-code" placeholder="A1B2C3"><button type="submit">Join Game</button>
     </form>
+    <div style="max-width: 250px; margin: 100px auto 0 auto;">
+      <small style="font-size: x-small;">
+        <a href="https://bigpotato.com/products/dont-get-got">Don't Get Got!</a>
+        is a product of <a href="https://bigpotato.com/">Big Potato Games</a>,
+        with whom this site is unaffiliated. (We're just big fans!) We strongly
+        encourage you to go buy a copy of this excellent game for offline play.
+      </small>
+    </div>
   </body>
 </html>
