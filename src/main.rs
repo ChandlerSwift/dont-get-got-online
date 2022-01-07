@@ -1,9 +1,13 @@
 #[macro_use] extern crate rocket;
 
+use std::sync::{Mutex,RwLock};
 use rocket::fs::FileServer;
 use rocket_dyn_templates::{Template};
 use rocket::serde::{Serialize, Serializer};
 use serde::ser::SerializeStruct;
+use std::collections::HashMap;
+use rocket::State;
+use rocket::response::Redirect;
 // use rocket::http::CookieJar;
 
 #[derive(Debug, Serialize)]
@@ -134,13 +138,44 @@ fn play() -> Template {
     })
 }
 
+#[post("/play")]
+fn new(games: &State<GameList>) -> Redirect {
+    let mut game_list = games.games.write().unwrap();
+    let new_join_code = format!("game{}", game_list.len());
+    game_list.insert(new_join_code.clone(), Mutex::new(Game{
+        join_code: new_join_code,
+        players: vec![
+            Player{
+                name: String::from("Chandler"),
+                challenges: Vec::new(),
+            }
+        ]
+    }));
+    Redirect::to(uri!(play()))
+}
+
+#[get("/status")]
+fn status(games: &State<GameList>) -> Template {
+    Template::render("status", games.inner())
+}
+
+#[derive(Debug, Serialize)]
+struct GameList {
+    games: RwLock<HashMap<String, Mutex<Game>>>,
+}
+
 #[launch]
 fn rocket() -> _ {
     // TODO: should I use a Rocket builtin rather than std::fs for this?
     // let raw_input = fs::read_to_string("challenges.txt").expect("Something went wrong reading the file");
     // let challenges = raw_input.trim().split("\n").collect::<Vec<&str>>();
 
-    rocket::build().mount("/", routes![index, play])
+    let games = GameList{
+        games: RwLock::new(HashMap::new()),
+    };
+
+    rocket::build().mount("/", routes![index, play, new, status])
         .attach(Template::fairing())
+        .manage(games)
         .mount("/", FileServer::from("static"))
 }
