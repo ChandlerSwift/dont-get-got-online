@@ -8,6 +8,7 @@
   </head>
   <body>
     <h1>Don't Get Got!</h1>
+    <p>Invite your friends to join with code <code>{{ game.join_code }}</code></p>
     <div class="status">TODO: status</div>
     <h3>Challenges</h3>
     <ul id="challenge-list">
