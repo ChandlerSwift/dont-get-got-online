@@ -11,7 +11,7 @@ use rocket::State;
 use rocket_dyn_templates::Template;
 use serde::ser::SerializeStruct;
 use std::collections::HashMap;
-use std::iter;
+use std::{fs, iter};
 use std::sync::{Mutex, RwLock};
 
 #[derive(Clone, Debug, Serialize)]
@@ -123,17 +123,35 @@ struct NewGame {
     join_code: String,
 }
 
+fn make_challenges(prompts: &Vec<Prompt>) -> Vec<Challenge> {
+    let mut challenges = Vec::new();
+    for prompt in prompts.choose_multiple(&mut rand::thread_rng(), 5) {
+        challenges.push(Challenge{
+            prompt: prompt.clone(),
+            state: ChallengeState::Active,
+            is_special_challenge: false,
+        })
+    }
+
+    challenges.push(Challenge{
+        prompt: String::from("Say \"Guess what?\" to another player. If they respond \"What?\", say \"You got got!\"."),
+        state: ChallengeState::Active,
+        is_special_challenge: true,
+    });
+    challenges
+}
+
 #[post("/play", data = "<new_game_form>")]
-fn new(games: &State<GameList>, new_game_form: Form<NewGame>, jar: &CookieJar<'_>) -> Redirect {
+fn new(games: &State<GameList>, prompts: &State<Vec<Prompt>>, new_game_form: Form<NewGame>, jar: &CookieJar<'_>) -> Redirect {
     match new_game_form.action.as_str() {
-        "join" => {
+        "join" => { // TODO: player limit
             let games = games.games.read().unwrap();
             let game_to_join = games.get(&new_game_form.join_code.to_uppercase().clone());
             match game_to_join {
                 Some(game) => {
                     game.lock().unwrap().players.push(Player {
                         name: new_game_form.name.clone(),
-                        challenges: Vec::new(), // TODO
+                        challenges: make_challenges(prompts),
                     });
                     jar.add_private(Cookie::new("game", new_game_form.join_code.to_uppercase()));
                     jar.add_private(Cookie::new(
@@ -161,7 +179,7 @@ fn new(games: &State<GameList>, new_game_form: Form<NewGame>, jar: &CookieJar<'_
                     join_code: new_join_code.clone(),
                     players: vec![Player {
                         name: new_game_form.name.clone(),
-                        challenges: Vec::new(), // TODO;
+                        challenges: make_challenges(prompts),
                     }],
                 }),
             );
@@ -186,8 +204,11 @@ struct GameList {
 #[launch]
 fn rocket() -> _ {
     // TODO: should I use a Rocket builtin rather than std::fs for this?
-    // let raw_input = fs::read_to_string("challenges.txt").expect("Something went wrong reading the file");
-    // let challenges = raw_input.trim().split("\n").collect::<Vec<&str>>();
+    let raw_input = fs::read_to_string("challenges.txt").expect("Something went wrong reading the file");
+    let mut prompts = Vec::new();
+    for s in raw_input.trim().split("\n") {
+        prompts.push(s.to_string());
+    }
 
     let games = GameList {
         games: RwLock::new(HashMap::new()),
@@ -197,5 +218,6 @@ fn rocket() -> _ {
         .mount("/", routes![index, play, new, status])
         .attach(Template::fairing())
         .manage(games)
+        .manage(prompts)
         .mount("/", FileServer::from("static"))
 }
