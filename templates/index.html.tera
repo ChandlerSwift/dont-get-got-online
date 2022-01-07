@@ -8,11 +8,10 @@
     <h1>Don't Get Got!</h1>
     <form action="/play" method="POST">
       <label for="name">Your name:</label><br>
-      <input type="text" name="name" id="name"><br><br>
-
+      <input type="text" name="name" id="name"><br><br><br>
       <button type="submit">Create Game</button><br>
       or<br>
-      <input type="text" name="join-code" id="join-code" placeholder="A1B2C3"><button type="submit">Join Game</button>
+      <input type="text" size="6" name="join-code" id="join-code" placeholder="A1B2C3"><button type="submit">Join Game</button>
     </form>
   </body>
 </html>
