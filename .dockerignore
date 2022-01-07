@@ -1,0 +1,4 @@
+/target/
+Dockerfile
+fly.toml
+README.md
