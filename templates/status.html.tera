@@ -6,8 +6,10 @@
   </head>
   <body>
     <h1>Don't Get Got! Status</h1>
+    <ul>
     {% for key, game in games %}
-    {{key}} => {{game}}
+    <li>{{ key }} => {{ game | json_encode() | safe }}</li>
     {% endfor %}
+    </ul>
   </body>
 </html>
