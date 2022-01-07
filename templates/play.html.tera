@@ -31,7 +31,6 @@
     <ul id="player-list">
       {% for player in game.players %}
       <li>{{ player.name }} (<span class="current-score">{{ player.score }}</span>/{{ player.challenges | length }})
-        {% if player.score > 0 %}
         <ul>
           {% for challenge in player.challenges %}
             {% if challenge.state != "Active" %}
@@ -39,7 +38,6 @@
             {% endif %}
           {% endfor %}
         </ul>
-        {% endif %}
       </li>
       {% endfor %}
     </ul>
