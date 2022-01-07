@@ -5,7 +5,7 @@ use rand::prelude::*;
 use rocket::form::Form;
 use rocket::fs::FileServer;
 use rocket::http::{Cookie, CookieJar};
-use rocket::response::Redirect;
+use rocket::response::{Flash, Redirect};
 use rocket::serde::{Serialize, Serializer};
 use rocket::State;
 use rocket_dyn_templates::Template;
@@ -59,7 +59,7 @@ struct Challenge {
     prompt: Prompt,
 }
 
-#[derive(Debug, Serialize, PartialEq, Clone)]
+#[derive(Debug, Serialize, PartialEq, Clone, FromFormField)]
 #[serde(crate = "rocket::serde")]
 enum ChallengeState {
     Active,
@@ -114,6 +114,26 @@ fn play(games: &State<GameList>, cookies: &CookieJar<'_>) -> Result<Template, Re
             game: game,
         },
     ))
+}
+
+#[post("/challenge/<challenge_index>", data = "<state>")]
+fn set_challenge_state(games: &State<GameList>, cookies: &CookieJar<'_>, challenge_index: usize, state: Form<ChallengeState>) -> Flash<Redirect> {
+    // TODO: I should make a guard for the game
+    let join_code = cookies.get_private("game").unwrap_or(Cookie::new("", "")); // We won't find a game with this name
+    let join_code = join_code.value();
+    let games = games.games.read().unwrap();
+    let mut game = match games.get(join_code) {
+        Some(g) => g.lock().unwrap(),
+        None => return Flash::error(Redirect::to(uri!(index())), "Could not find game"), // TODO: display
+    };
+    let player_index: usize = cookies
+        .get_private("player_index")
+        .unwrap()
+        .value()
+        .parse()
+        .unwrap();
+    game.players[player_index].challenges[challenge_index].state = state.clone();
+    Flash::success(Redirect::to(uri!(play())), "done")
 }
 
 #[derive(Debug, FromForm)]
@@ -215,7 +235,7 @@ fn rocket() -> _ {
     };
 
     rocket::build()
-        .mount("/", routes![index, play, new, status])
+        .mount("/", routes![index, play, new, status, set_challenge_state])
         .attach(Template::fairing())
         .manage(games)
         .manage(prompts)
