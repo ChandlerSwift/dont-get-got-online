@@ -29,16 +29,15 @@ struct Player {
 
 impl Player {
     fn score(&self) -> usize {
-        let mut score = 0;
-        for challenge in &self.challenges {
-            if challenge.state == ChallengeState::Succeeded {
-                score += 1;
-            }
-        }
-        score
+        self.challenges
+            .iter()
+            .filter(|c| c.state == ChallengeState::Succeeded)
+            .count()
     }
 }
 
+// Implementing this explicitly (rather than via #[derive()]) allows us to
+// include score
 impl Serialize for Player {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -102,7 +101,12 @@ fn play(games: &State<GameList>, cookies: &CookieJar<'_>) -> Result<Template, Re
         Some(g) => g.lock().unwrap().clone(),
         None => return Err(Redirect::to(uri!(index()))),
     };
-    let player_index: usize = cookies.get_private("player_index").unwrap().value().parse().unwrap();
+    let player_index: usize = cookies
+        .get_private("player_index")
+        .unwrap()
+        .value()
+        .parse()
+        .unwrap();
     Ok(Template::render(
         "play",
         PlayPageContext {
@@ -132,7 +136,10 @@ fn new(games: &State<GameList>, new_game_form: Form<NewGame>, jar: &CookieJar<'_
                         challenges: Vec::new(), // TODO
                     });
                     jar.add_private(Cookie::new("game", new_game_form.join_code.to_uppercase()));
-                    jar.add_private(Cookie::new("player_index", (game.lock().unwrap().players.len() - 1).to_string()));
+                    jar.add_private(Cookie::new(
+                        "player_index",
+                        (game.lock().unwrap().players.len() - 1).to_string(),
+                    ));
                     Redirect::to(uri!(play()))
                 }
                 None => Redirect::to(uri!(index())),
