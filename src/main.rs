@@ -1,6 +1,6 @@
 #[macro_use] extern crate rocket;
 
-use rocket::fs::{relative, FileServer};
+use rocket::fs::FileServer;
 use rocket_dyn_templates::{Template};
 use rocket::serde::{Serialize, Serializer};
 use serde::ser::SerializeStruct;
@@ -142,5 +142,5 @@ fn rocket() -> _ {
 
     rocket::build().mount("/", routes![index, play])
         .attach(Template::fairing())
-        .mount("/", FileServer::from(relative!("static")))
+        .mount("/", FileServer::from("static"))
 }
