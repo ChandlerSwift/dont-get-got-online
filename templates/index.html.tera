@@ -11,7 +11,7 @@
       <input type="text" name="name" id="name"><br><br><br>
       <button type="submit" name="action" value="create">Create Game</button><br>
       or<br>
-      <input type="text" size="6" name="join-code" id="join-code" placeholder="A1B2C3"><button type="submit" name="action" value="join">Join Game</button>
+      <input type="text" size="6" name="join_code" id="join-code" placeholder="A1B2C3"><button type="submit" name="action" value="join">Join Game</button>
     </form>
     <div style="max-width: 250px; margin: 100px auto 0 auto;">
       <small style="font-size: x-small;">

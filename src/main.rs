@@ -1,6 +1,8 @@
 #[macro_use]
 extern crate rocket;
 
+use rand::prelude::*;
+use rocket::form::Form;
 use rocket::fs::FileServer;
 use rocket::response::Redirect;
 use rocket::serde::{Serialize, Serializer};
@@ -8,8 +10,9 @@ use rocket::State;
 use rocket_dyn_templates::Template;
 use serde::ser::SerializeStruct;
 use std::collections::HashMap;
+use std::iter;
 use std::sync::{Mutex, RwLock};
-// use rocket::http::CookieJar;
+// use rocket::http::{Cookie, CookieJar};
 
 #[derive(Debug, Serialize)]
 struct PlayPageContext {
@@ -81,6 +84,7 @@ type Prompt = String;
 
 #[get("/")]
 fn index() -> Template {
+    // TODO: check if valid cookie and redirect
     let game = Game {
         join_code: String::from("foo"),
         players: Vec::new(),
@@ -144,21 +148,54 @@ fn play() -> Template {
     )
 }
 
-#[post("/play")]
-fn new(games: &State<GameList>) -> Redirect {
-    let mut game_list = games.games.write().unwrap();
-    let new_join_code = format!("game{}", game_list.len());
-    game_list.insert(
-        new_join_code.clone(),
-        Mutex::new(Game {
-            join_code: new_join_code,
-            players: vec![Player {
-                name: String::from("Chandler"),
-                challenges: Vec::new(),
-            }],
-        }),
-    );
-    Redirect::to(uri!(play()))
+#[derive(Debug, FromForm)]
+struct NewGame {
+    name: String,
+    action: String,
+    join_code: String,
+}
+
+#[post("/play", data = "<new_game_form>")]
+fn new(games: &State<GameList>, new_game_form: Form<NewGame>) -> Redirect {
+    match new_game_form.action.as_str() {
+        "join" => {
+            let games = games.games.read().unwrap();
+            let game_to_join = games.get(&new_game_form.join_code.to_uppercase());
+            match game_to_join {
+                Some(game) => {
+                    game.lock().unwrap().players.push(Player {
+                        name: new_game_form.name.clone(),
+                        challenges: Vec::new(), // TODO
+                    });
+                    Redirect::to(uri!(play()))
+                }
+                None => Redirect::to(uri!(index())),
+            }
+        }
+        "create" => {
+            // Honestly I don't have to write anything until I validate the game
+            // with the given join code exists, but I'm not too concerned.
+            let mut game_list = games.games.write().unwrap();
+            let new_join_code: String = iter::repeat(())
+                .map(|()| rand::thread_rng().sample(rand::distributions::Alphanumeric))
+                .map(char::from)
+                .take(6)
+                .collect::<String>()
+                .to_uppercase();
+            game_list.insert(
+                new_join_code.clone(),
+                Mutex::new(Game {
+                    join_code: new_join_code,
+                    players: vec![Player {
+                        name: new_game_form.name.clone(),
+                        challenges: Vec::new(), // TODO;
+                    }],
+                }),
+            );
+            Redirect::to(uri!(play()))
+        }
+        _ => Redirect::to(uri!(index())),
+    }
 }
 
 #[get("/status")]
