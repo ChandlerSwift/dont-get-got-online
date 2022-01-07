@@ -4,6 +4,7 @@ extern crate rocket;
 use rand::prelude::*;
 use rocket::form::Form;
 use rocket::fs::FileServer;
+use rocket::http::{Cookie, CookieJar};
 use rocket::response::Redirect;
 use rocket::serde::{Serialize, Serializer};
 use rocket::State;
@@ -12,22 +13,15 @@ use serde::ser::SerializeStruct;
 use std::collections::HashMap;
 use std::iter;
 use std::sync::{Mutex, RwLock};
-// use rocket::http::{Cookie, CookieJar};
 
-#[derive(Debug, Serialize)]
-struct PlayPageContext {
-    game: Game,
-    challenges: Vec<Challenge>,
-}
-
-#[derive(Debug, Serialize)]
+#[derive(Clone, Debug, Serialize)]
 #[serde(crate = "rocket::serde")]
 struct Game {
     join_code: String,
     players: Vec<Player>,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 struct Player {
     name: String,
     challenges: Vec<Challenge>,
@@ -92,60 +86,30 @@ fn index() -> Template {
     Template::render("index", game) // TODO: I shouldn't need an empty context here
 }
 
+#[derive(Debug, Serialize)]
+struct PlayPageContext {
+    game: Game,
+    player: Player,
+}
+
 #[get("/play")]
-fn play() -> Template {
-    let game = Game{
-        join_code: String::from("A1B2C3"),
-        players: vec![
-            Player{
-                name: String::from("Chandler"),
-                challenges: vec![
-                    Challenge{
-                        is_special_challenge: false,
-                        state: ChallengeState::Active,
-                        prompt: String::from("Wear an article of clothing inside out. Get another player to comment."),
-                    },
-                    Challenge{
-                        is_special_challenge: false,
-                        state: ChallengeState::Active,
-                        prompt: String::from("Get another player to help you up off the ground."),
-                    },
-                    Challenge{
-                        is_special_challenge: true,
-                        state: ChallengeState::Failed,
-                        prompt: String::from("Ask another player \"Guess what?\" and get them to respond with \"what\"."),
-                    },
-                ],
-            },
-            Player{
-                name: String::from("Jeff"),
-                challenges: vec![
-                    Challenge{
-                        is_special_challenge: false,
-                        state: ChallengeState::Succeeded,
-                        prompt: String::from("Get another player to talk to something that isn't voice activated."),
-                    },
-                    Challenge{
-                        is_special_challenge: false,
-                        state: ChallengeState::Failed,
-                        prompt: String::from("Tie another player's shoes together without them noticing."),
-                    },
-                    Challenge{
-                        is_special_challenge: true,
-                        state: ChallengeState::Active,
-                        prompt: String::from("Ask another player \"Guess what?\" and get them to respond with \"what\".Clone"),
-                    },
-                ],
-            },
-        ],
+fn play(games: &State<GameList>, cookies: &CookieJar<'_>) -> Result<Template, Redirect> {
+    // TODO: better error handling
+    let join_code = cookies.get_private("game").unwrap_or(Cookie::new("", "")); // We won't find a game with this name
+    let join_code = join_code.value();
+    let games = games.games.read().unwrap();
+    let game = match games.get(join_code) {
+        Some(g) => g.lock().unwrap().clone(),
+        None => return Err(Redirect::to(uri!(index()))),
     };
-    Template::render(
+    let player_index: usize = cookies.get_private("player_index").unwrap().value().parse().unwrap();
+    Ok(Template::render(
         "play",
         PlayPageContext {
-            challenges: game.players[0].challenges.clone(),
+            player: game.players[player_index].clone(),
             game: game,
         },
-    )
+    ))
 }
 
 #[derive(Debug, FromForm)]
@@ -156,17 +120,19 @@ struct NewGame {
 }
 
 #[post("/play", data = "<new_game_form>")]
-fn new(games: &State<GameList>, new_game_form: Form<NewGame>) -> Redirect {
+fn new(games: &State<GameList>, new_game_form: Form<NewGame>, jar: &CookieJar<'_>) -> Redirect {
     match new_game_form.action.as_str() {
         "join" => {
             let games = games.games.read().unwrap();
-            let game_to_join = games.get(&new_game_form.join_code.to_uppercase());
+            let game_to_join = games.get(&new_game_form.join_code.to_uppercase().clone());
             match game_to_join {
                 Some(game) => {
                     game.lock().unwrap().players.push(Player {
                         name: new_game_form.name.clone(),
                         challenges: Vec::new(), // TODO
                     });
+                    jar.add_private(Cookie::new("game", new_game_form.join_code.to_uppercase()));
+                    jar.add_private(Cookie::new("player_index", (game.lock().unwrap().players.len() - 1).to_string()));
                     Redirect::to(uri!(play()))
                 }
                 None => Redirect::to(uri!(index())),
@@ -185,13 +151,15 @@ fn new(games: &State<GameList>, new_game_form: Form<NewGame>) -> Redirect {
             game_list.insert(
                 new_join_code.clone(),
                 Mutex::new(Game {
-                    join_code: new_join_code,
+                    join_code: new_join_code.clone(),
                     players: vec![Player {
                         name: new_game_form.name.clone(),
                         challenges: Vec::new(), // TODO;
                     }],
                 }),
             );
+            jar.add_private(Cookie::new("game", new_join_code));
+            jar.add_private(Cookie::new("player_index", "0"));
             Redirect::to(uri!(play()))
         }
         _ => Redirect::to(uri!(index())),

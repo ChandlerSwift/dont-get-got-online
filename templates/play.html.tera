@@ -11,7 +11,7 @@
     <div class="status">TODO: status</div>
     <h3>Challenges</h3>
     <ul id="challenge-list">
-      {% for challenge in challenges %}
+      {% for challenge in player.challenges %}
         <li><b>{{ challenge.state }}:</b> {{ challenge.prompt }}</li>
       {% endfor %}
     </ul>
