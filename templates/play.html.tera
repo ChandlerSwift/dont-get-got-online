@@ -1,45 +1,43 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Don't Get Got! Online</title>
-    <link rel="stylesheet" href="/style.css">
-    <script src="/script.js" charset="utf-8" defer></script>
-  </head>
-  <body>
-    <h1>Don't Get Got!</h1>
-    <p>Invite your friends to join with code <code>{{ game.join_code }}</code></p>
-    <div class="status">Your score: {{ player.score }}</div>
-    <h3>Challenges</h3>
-    <ul id="challenge-list">
-      {% for challenge in player.challenges %}
-        <li>
-          <b>{{ challenge.state }}:</b> {{ challenge.prompt }}
-          <form method="POST" action="/challenge/{{ loop.index0 }}">
-            <select name="state">
-              <option value="active">Active</option>
-              <option value="succeeded">Succeeded</option>
-              <option value="failed">Failed</option>
-            </select>
-            <button type="submit">Update</button>
-          </form>
-        </li>
-      {% endfor %}
-    </ul>
-    <h3>Players</h3>
-    <ul id="player-list">
-      {% for player in game.players %}
-      <li>{{ player.name }} (<span class="current-score">{{ player.score }}</span>/{{ player.challenges | length }})
-        <ul>
-          {% for challenge in player.challenges %}
-            {% if challenge.state != "Active" %}
-              <li><b>{{ challenge.state }}:</b> {{ challenge.prompt }}</li>
-            {% endif %}
-          {% endfor %}
-        </ul>
+{% extends "base" %}
+{% block content %}
+<div class="container" style="max-width: 500px; margin: 0 auto;">
+  <h1 class="mt-5 mb-3 display-2 text-center">Don't Get Got!</h1>
+  <p class="text-center">Invite your friends to join with code <code>{{ game.join_code }}</code>.</p>
+  <!--<div class="progress">
+    <div class="progress-bar bg-success" style="width: 17%">1 &checkmark;</div>
+    <div class="progress-bar bg-light text-dark" style="width: 50%">2 to win</div>
+    <div class="progress-bar bg-danger" style="width: 33%">2 &#10007;</div>
+  </div>-->
+  <div class="status">Your score: {{ player.score }}</div>
+  <h3>Challenges</h3>
+  <ul id="challenge-list">
+    {% for challenge in player.challenges %}
+      <li>
+        <b>{{ challenge.state }}:</b> {{ challenge.prompt }}
+        <form method="POST" action="/challenge/{{ loop.index0 }}">
+          <select name="state">
+            <option value="active">Active</option>
+            <option value="succeeded">Succeeded</option>
+            <option value="failed">Failed</option>
+          </select>
+          <button type="submit">Update</button>
+        </form>
       </li>
-      {% endfor %}
-    </ul>
-  </body>
-</html>
+    {% endfor %}
+  </ul>
+  <h3>Players</h3>
+  <ul id="player-list">
+    {% for player in game.players %}
+    <li>{{ player.name }} (<span class="current-score">{{ player.score }}</span>/{{ player.challenges | length }})
+      <ul>
+        {% for challenge in player.challenges %}
+          {% if challenge.state != "Active" %}
+            <li><b>{{ challenge.state }}:</b> {{ challenge.prompt }}</li>
+          {% endif %}
+        {% endfor %}
+      </ul>
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock content %}
