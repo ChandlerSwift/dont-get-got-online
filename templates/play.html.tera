@@ -18,7 +18,7 @@
     <h3>Challenges</h3>
     <ul id="challenge-list" class="list-group list-group-flush">
       {% for challenge in player.challenges %}
-        <li class="list-group-item d-flex align-items-center">
+        <li data-index="{{ loop.index0 }}" class="list-group-item d-flex align-items-center">
           {% if challenge.state == "Failed" %}
             <div class="icon text-danger pull-left">&#10007;</div>
           {% elif challenge.state == "Succeeded" %}
@@ -26,15 +26,7 @@
           {% else %}
             <div class="icon text-secondary pull-left">&ctdot;</div>
           {% endif %}
-          {{ challenge.prompt }}
-          <!--<form method="POST" action="/challenge/{{ loop.index0 }}">
-            <select name="state">
-              <option value="active">Active</option>
-              <option value="succeeded">Succeeded</option>
-              <option value="failed">Failed</option>
-            </select>
-            <button type="submit">Update</button>
-          </form><!-- -->
+          <span class="challenge-text">{{ challenge.prompt }}</span>
         </li>
       {% endfor %}
     </ul>
@@ -56,8 +48,67 @@
     {% endfor %}
   </div>
 </div>
+{% endblock content %}
+
+{% block footer %}
+<!-- Status update modal -->
+<div class="modal fade" id="statusUpdateModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-fullscreen-sm-down">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Update challenge</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p id="challenge-text"></p>
+
+        <form id="update-challenge-form" method="POST">
+          <input type="hidden" name="state" id="state-input">
+          <label for="whod-you-get-input">Who'd you get?</label>
+          <select class="form-select" id="whod-you-get-input" name="target">
+            {% for other_player in game.players %}
+              {% if other_player != player %}
+              <option value="{{ loop.index0 }}">{{ other_player.name }}</option>
+              {% endif %}
+            {% endfor %}
+          </select>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button id="active-form-submit-btn" type="button" class="btn btn-outline-secondary">Mark Active</button>
+        <button id="success-form-submit-btn" type="button" class="btn btn-outline-success">Mark Succeeded</button>
+        <button id="failure-form-submit-btn" type="button" class="btn btn-outline-danger">Mark Failed</button>
+      </div>
+    </div>
+  </div>
+</div>
 <script src="/qrcode.min.js"></script>
 <script>
   new QRCode(document.getElementById("qrcode"), `${window.location.protocol}//${window.location.host}/#{{ game.join_code}}`);
+
+  for (let challenge_item of document.querySelectorAll("#challenge-list > li")) {
+    challenge_item.addEventListener("click", function() {
+      document.getElementById("update-challenge-form").action = `/challenge/${challenge_item.dataset.index}`;
+      let modalDiv = document.getElementById('statusUpdateModal');
+      modalDiv.querySelector("#challenge-text").innerText = challenge_item.querySelector(".challenge-text").innerText;
+      myModal = new bootstrap.Modal(modalDiv);
+      myModal.show();
+    });
+  }
+
+  document.getElementById("success-form-submit-btn").addEventListener("click", function() {
+    document.getElementById("state-input").value = "succeeded";
+    document.getElementById("update-challenge-form").submit();
+  });
+
+  document.getElementById("failure-form-submit-btn").addEventListener("click", function() {
+    document.getElementById("state-input").value = "failed";
+    document.getElementById("update-challenge-form").submit();
+  });
+
+  document.getElementById("active-form-submit-btn").addEventListener("click", function() {
+    document.getElementById("state-input").value = "active";
+    document.getElementById("update-challenge-form").submit();
+  });
 </script>
-{% endblock content %}
+{% endblock footer %}

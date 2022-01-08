@@ -15,11 +15,15 @@
         flex-shrink: 0;
         /* todo: text-shadow: 2px 2px 4px #ddd; ? */
       }
+      #challenge-list > li:hover {
+        cursor: pointer;
+        background: #e9ecef;
+      }
     </style>
   </head>
   <body class="d-flex flex-column h-100">
     <main class="flex-shrink-0">
-        {% block content %}{% endblock content %}
+      {% block content %}{% endblock content %}
     </main>
     <footer class="footer mt-auto py-3 bg-light">
       <div class="container text-center text-muted small">
@@ -31,5 +35,6 @@
       </div>
     </footer>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    {% block footer %}{% endblock footer %}
   </body>
 </html>
