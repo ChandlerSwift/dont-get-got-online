@@ -3,14 +3,26 @@
 <div class="container" style="text-align: center; max-width: 500px; margin: 0 auto;">
   <h1 class="my-5 display-2">Don't Get Got!</h1>
   <form action="/play" method="POST">
-    <label for="name" class="form-label">Your name:</label><br>
-    <input class="form-control" type="text" name="name" id="name" required><br><br><br>
-    <button class="btn btn-outline-primary" type="submit" name="action" value="create">Create Game</button><br>
-    or
-    <div class="input-group mb-4">
+    <label for="name" class="form-label">Your name:</label>
+    <input class="mb-5 form-control" type="text" name="name" id="name" required>
+    <button class="btn btn-outline-primary" id="create-btn" type="submit" name="action" value="create">Create Game</button>
+    <div id="or">or</div>
+    <div class="input-group mb-5">
       <input class="form-control" type="text" name="join_code" id="join-code" placeholder="Join Code">
       <button class="btn btn-outline-primary" type="submit" name="action" value="join">Join Game</button>
     </div>
+    <script>
+      // TODO: this could also be done server-side.
+      // TODO: is it bad UX to have the create button disappear completely based
+      // on the contents of the fragment?
+      let prefilled_code = window.location.hash.substr(1);
+      if (prefilled_code != "") {
+        document.getElementById("join-code").value = prefilled_code;
+        for (let el of ["create-btn", "or"]) {
+          document.getElementById(el).style.display = "none";
+        }
+      }
+    </script>
   </form>
 </div>
 {% endblock content %}
