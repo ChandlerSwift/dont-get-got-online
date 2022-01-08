@@ -28,10 +28,10 @@ struct Player {
 }
 
 impl Player {
-    fn score(&self) -> usize {
+    fn count_by_state(&self, state: ChallengeState) -> usize {
         self.challenges
             .iter()
-            .filter(|c| c.state == ChallengeState::Succeeded)
+            .filter(|c| c.state == state)
             .count()
     }
 }
@@ -46,7 +46,9 @@ impl Serialize for Player {
         let mut s = serializer.serialize_struct("Player", 3)?;
         s.serialize_field("name", &self.name)?;
         s.serialize_field("challenges", &self.challenges)?;
-        s.serialize_field("score", &self.score())?;
+        s.serialize_field("success_count", &self.count_by_state(ChallengeState::Succeeded))?;
+        s.serialize_field("failure_count", &self.count_by_state(ChallengeState::Failed))?;
+        s.serialize_field("active_count", &self.count_by_state(ChallengeState::Active))?;
         s.end()
     }
 }

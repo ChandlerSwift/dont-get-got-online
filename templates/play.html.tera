@@ -10,12 +10,11 @@
     <div class="my-5 d-inline-block mx-auto" id="qrcode"></div>
   </div>
   <div class="qrtoggle collapse show"><!-- hide the rest of the screen when the QR code is shown -->
-    <!--<div class="progress">
-      <div class="progress-bar bg-success" style="width: 17%">1 &checkmark;</div>
-      <div class="progress-bar bg-light text-dark" style="width: 50%">2 to win</div>
-      <div class="progress-bar bg-danger" style="width: 33%">2 &#10007;</div>
-    </div>-->
-    <div class="status">Your score: {{ player.score }}</div>
+    <div class="progress mb-3">
+      <div class="progress-bar bg-success" style="width: {{ 100/6 * player.success_count }}%">{{ player.success_count }} &checkmark;</div>
+      <div class="progress-bar bg-light text-dark" style="width: {{ 100/6 * (6 - player.success_count - player.failure_count) }}%">{{ 3 - player.success_count }} to win</div>
+      <div class="progress-bar bg-danger" style="width: {{ 100/6 * player.failure_count }}%">{{ player.failure_count }} &#10007;</div>
+    </div>
     <h3>Challenges</h3>
     <ul id="challenge-list">
       {% for challenge in player.challenges %}
@@ -35,7 +34,7 @@
     <h3>Players</h3>
     <ul id="player-list">
       {% for player in game.players %}
-      <li>{{ player.name }} (<span class="current-score">{{ player.score }}</span>/{{ player.challenges | length }})
+      <li>{{ player.name }} (<span class="current-score">{{ player.success_count }}</span>/{{ player.challenges | length }})
         <ul>
           {% for challenge in player.challenges %}
             {% if challenge.state != "Active" %}
