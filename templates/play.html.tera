@@ -9,42 +9,51 @@
   <div class="collapse text-center qrtoggle" data-bs-toggle="collapse" data-bs-target=".qrtoggle">
     <div class="my-5 d-inline-block mx-auto" id="qrcode"></div>
   </div>
-  <div class="qrtoggle collapse show"><!-- hide the rest of the screen when the QR code is shown -->
+  <div class="qrtoggle collapse show mb-5"><!-- hide the rest of the screen when the QR code is shown -->
     <div class="progress mb-3">
       <div class="progress-bar bg-success" style="width: {{ 100/6 * player.success_count }}%">{{ player.success_count }} &checkmark;</div>
       <div class="progress-bar bg-light text-dark" style="width: {{ 100/6 * (6 - player.success_count - player.failure_count) }}%">{{ 3 - player.success_count }} to win</div>
       <div class="progress-bar bg-danger" style="width: {{ 100/6 * player.failure_count }}%">{{ player.failure_count }} &#10007;</div>
     </div>
     <h3>Challenges</h3>
-    <ul id="challenge-list">
+    <ul id="challenge-list" class="list-group list-group-flush">
       {% for challenge in player.challenges %}
-        <li>
-          <b>{{ challenge.state }}:</b> {{ challenge.prompt }}
-          <form method="POST" action="/challenge/{{ loop.index0 }}">
+        <li class="list-group-item d-flex align-items-center">
+          {% if challenge.state == "Failed" %}
+            <div class="icon text-danger pull-left">&#10007;</div>
+          {% elif challenge.state == "Succeeded" %}
+            <div class="icon text-success pull-left">&checkmark;</div>
+          {% else %}
+            <div class="icon text-secondary pull-left">&ctdot;</div>
+          {% endif %}
+          {{ challenge.prompt }}
+          <!--<form method="POST" action="/challenge/{{ loop.index0 }}">
             <select name="state">
               <option value="active">Active</option>
               <option value="succeeded">Succeeded</option>
               <option value="failed">Failed</option>
             </select>
             <button type="submit">Update</button>
-          </form>
+          </form><!-- -->
         </li>
       {% endfor %}
     </ul>
-    <h3>Players</h3>
-    <ul id="player-list">
-      {% for player in game.players %}
-      <li>{{ player.name }} (<span class="current-score">{{ player.success_count }}</span>/{{ player.challenges | length }})
-        <ul>
+    <h3 class="mt-4">Players</h3>
+    {% for player in game.players %}
+      <div class="card mb-2">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          {{ player.name }}
+          <span class="badge bg-secondary rounded-pill">{{ player.success_count }}/3</span>
+        </div>
+        <ul class="list-group list-group-flush">
           {% for challenge in player.challenges %}
             {% if challenge.state != "Active" %}
-              <li><b>{{ challenge.state }}:</b> {{ challenge.prompt }}</li>
+              <li class="list-group-item"><b>{{ challenge.state }}:</b> {{ challenge.prompt }}</li>
             {% endif %}
           {% endfor %}
         </ul>
-      </li>
-      {% endfor %}
-    </ul>
+      </div>
+    {% endfor %}
   </div>
 </div>
 <script src="/qrcode.min.js"></script>
