@@ -59,6 +59,7 @@ struct Challenge {
     is_special_challenge: bool,
     state: ChallengeState,
     prompt: Prompt,
+    got_player_index: usize, // Could be an Option, but that won't serialize as well
 }
 
 #[derive(Debug, Serialize, PartialEq, Clone, FromFormField)]
@@ -118,8 +119,14 @@ fn play(games: &State<GameList>, cookies: &CookieJar<'_>) -> Result<Template, Re
     ))
 }
 
-#[post("/challenge/<challenge_index>", data = "<state>")]
-fn set_challenge_state(games: &State<GameList>, cookies: &CookieJar<'_>, challenge_index: usize, state: Form<ChallengeState>) -> Flash<Redirect> {
+#[derive(Debug, FromForm)]
+struct UpdateChallengeState {
+    state: ChallengeState,
+    target: usize,
+}
+
+#[post("/challenge/<challenge_index>", data = "<state_form>")]
+fn set_challenge_state(games: &State<GameList>, cookies: &CookieJar<'_>, challenge_index: usize, state_form: Form<UpdateChallengeState>) -> Flash<Redirect> {
     // TODO: I should make a guard for the game
     let join_code = cookies.get_private("game").unwrap_or(Cookie::new("", "")); // We won't find a game with this name
     let join_code = join_code.value();
@@ -134,15 +141,9 @@ fn set_challenge_state(games: &State<GameList>, cookies: &CookieJar<'_>, challen
         .value()
         .parse()
         .unwrap();
-    game.players[player_index].challenges[challenge_index].state = state.clone();
+    game.players[player_index].challenges[challenge_index].state = state_form.state.clone();
+    game.players[player_index].challenges[challenge_index].got_player_index = state_form.target;
     Flash::success(Redirect::to(uri!(play())), "done")
-}
-
-#[derive(Debug, FromForm)]
-struct NewGame {
-    name: String,
-    action: String,
-    join_code: String,
 }
 
 fn make_challenges(prompts: &Vec<Prompt>) -> Vec<Challenge> {
@@ -152,6 +153,7 @@ fn make_challenges(prompts: &Vec<Prompt>) -> Vec<Challenge> {
             prompt: prompt.clone(),
             state: ChallengeState::Active,
             is_special_challenge: false,
+            got_player_index: 0,
         })
     }
 
@@ -159,8 +161,16 @@ fn make_challenges(prompts: &Vec<Prompt>) -> Vec<Challenge> {
         prompt: String::from("Say \"Guess what?\" to another player. If they respond \"What?\", say \"You got got!\"."),
         state: ChallengeState::Active,
         is_special_challenge: true,
+        got_player_index: 0,
     });
     challenges
+}
+
+#[derive(Debug, FromForm)]
+struct NewGame {
+    name: String,
+    action: String,
+    join_code: String,
 }
 
 #[post("/play", data = "<new_game_form>")]
