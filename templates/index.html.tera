@@ -4,7 +4,7 @@
   <h1 class="my-5 display-2">Don't Get Got!</h1>
   <form action="/play" method="POST">
     <label for="name" class="form-label">Your name:</label>
-    <input class="mb-5 form-control" type="text" name="name" id="name" required>
+    <input class="mb-5 form-control" type="text" name="name" id="name" required autofocus>
     <button class="btn btn-outline-primary" id="create-btn" type="submit" name="action" value="create">Create Game</button>
     <div id="or">or</div>
     <div class="input-group mb-5">
