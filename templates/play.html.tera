@@ -73,7 +73,7 @@
         <form id="update-challenge-form" method="POST">
           <input type="hidden" name="state" id="state-input">
           <label for="whod-you-get-input">Who'd you get?</label>
-          <select class="form-select" id="whod-you-get-input" name="target">
+          <select class="form-select" id="whod-you-get-input" name="target" required>
             {% for other_player in game.players %}
               {% if other_player != player %}
               <option value="{{ loop.index0 }}">{{ other_player.name }}</option>
